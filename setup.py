@@ -14,12 +14,12 @@ from os import path
 here = path.abspath(path.dirname(__file__))
 
 setup(
-    name='babel_utilities',
+    name='babel_util',
 
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version='1.0.0',
+    version='1.0.1',
 
     description='Utilities to support the babel platform',
 
