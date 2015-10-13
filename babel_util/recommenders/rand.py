@@ -11,6 +11,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     for line in args.infile:
-        fid, tid = map(str.strip, line.split(args.delimiter))
+        fid = line.split(args.delimiter).pop(0).strip()
         value = random.uniform(0, 1)
         args.outfile.write("{}\t{}\n".format(fid, value))
