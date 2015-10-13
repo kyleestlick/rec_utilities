@@ -2,13 +2,31 @@ from collections import defaultdict
 
 current_idx = 0
 
+FIELDS = {"pid": 0,
+          "title_raw": 1,
+          "title_normalized": 2,
+          "year": 3,
+          "date": 4,
+          "doi": 5,
+          "venue_raw": 6,
+          "venue_normalized": 7,
+          "journal_id": 8,
+          "conference_id": 9}
+
+
 def accum():
     global current_idx
     current_idx += 1
     return current_idx
 
+
 def invert_dict(d):
     return dict(zip(d.values(), d.keys()))
+
+
+def parse_line_tuple(line, delimiter='\t'):
+    return map(str.strip, line.split(delimiter))
+
 
 class MASParser:
     def __init__(self):
