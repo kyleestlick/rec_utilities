@@ -6,8 +6,10 @@ def papers_to_jid(stream):
     papers = dict()
     for line in stream:
         entry = mas.parse_line_tuple(line)
-        pid = papers[entry[mas.FIELDS["pid"]]]
-        papers[pid] = papers[entry[mas.FIELDS["jid"]]]
+        pid = entry[mas.FIELDS["pid"]]
+        journal_id = entry[mas.FIELDS["journal_id"]]
+        if journal_id:
+            papers[pid] = journal_id
     return papers
 
 
@@ -25,9 +27,12 @@ if __name__ == "__main__":
 
     journal_links = defaultdict(int)
     for line in args.links:
-        fid, tid = map(str.strip, line.split(args.delimiter))
-        key = (jid[fid], jid[tid])
-        journal_links[key] += 1
+        fid, tid = list(map(str.strip, line.split(args.delimiter)))
+        try:
+            key = (jid[fid], jid[tid])
+            journal_links[key] += 1
+        except KeyError:
+            pass
 
     for key, score in journal_links.items():
-        args.outfile("{}\t{}\t{}".format(key[0], key[1], score))
+        args.outfile.write("{}\t{}\t{}\n".format(key[0], key[1], score))
