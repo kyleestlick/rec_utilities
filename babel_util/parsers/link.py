@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from collections import defaultdict
 from scipy.sparse import dok_matrix
+from functools import partial
 import numpy as np
 
 #TODO: Figure out how to do this more safely
@@ -20,15 +21,19 @@ class LinkFile(object):
         self._stream = stream
         self.comment = comment
         self.delimiter = delimiter
-        self.ids = defaultdict(accum)
-        self._next_id = 0
+        self.ids = defaultdict(partial(LinkFile.accum, self))
+        self._next_id = -1
+
+    def accum(self):
+        self._next_id += 1
+        return self._next_id
 
     def build_ids(self):
         for fid, tid, _ in self:
             self.ids[fid]
             self.ids[tid]
 
-    def to_sparse_matrix(self, dtype=np.int32):
+    def to_sparse_matrix(self, dtype=np.int32, matrix_type="csr"):
         """Parse the stream and return a CSR sparse matrix"""
         cur_pos = self._stream.tell()
         self.build_ids()
@@ -39,7 +44,14 @@ class LinkFile(object):
         for fid, tid, weight in self:
             s[self.ids[fid], self.ids[tid]] += weight
 
-        return s.tocsr()
+        if matrix_type == "csr":
+            return s.tocsr()
+        elif matrix_type == "csc":
+            return s.tocsc()
+        elif matrix_type == "dok":
+            return s
+        else:
+            raise ValueError("matrix_type {} is unsupported.".format(matrix_type))
 
     def __iter__(self):
         self._iter = iter(self._stream)
