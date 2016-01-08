@@ -1,4 +1,6 @@
+from .base_parser import AbstractParser
 from collections import defaultdict
+from tables import *
 
 current_idx = 0
 
@@ -30,46 +32,19 @@ def parse_line_tuple(line, delimiter='\t'):
 
 class MASAbstract(object):
     def __init__(self, stream, delimiter="\t"):
-        self._stream = stream
-        self._delimiter = delimiter
+        super(MASAbstract, self).__init__(stream, delimiter)
 
     def parse_line(self, line):
         return list(map(str.strip, line.split(self.delimiter)))
 
-    def __iter__(self):
-        self._iter = iter(self._stream)
-        return self
-
-    def __next__(self):
-        return self.next()
-
-    def next(self):
-        line = self._iter.__next__()
-        while self.comment and line.startswith(self.comment):
-            line = self._iter.__next__()
-
-        return self.parse_line(line)
-
-
-class Papers(MASAbstract):
-    FIELDS = {"pid": 0,
-              "title_raw": 1,
-              "title_normalized": 2,
-              "year": 3,
-              "date": 4,
-              "doi": 5,
-              "venue_raw": 6,
-              "venue_normalized": 7,
-              "journal_id": 8,
-              "conference_id": 9}
-
+class Papers(AbstractParser):
     def __init__(self, stream, delimiter="\t"):
         super(MASAbstract, self).__init__(stream, delimiter)
 
     def get_journal_count(self):
         journals = defaultdict(int)
         for entry in self:
-            journals[entry[Papers.FIELDS["journal_id"]]] += 1
+            journals[entry[FIELDS["journal_id"]]] += 1
 
         return dict(journals)
 

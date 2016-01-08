@@ -42,7 +42,7 @@ class LinkFile(object):
         s = dok_matrix((len(self.ids), len(self.ids)), dtype=dtype)
 
         for fid, tid, weight in self:
-            s[self.ids[fid], self.ids[tid]] += weight
+            s[self.ids[tid], self.ids[fid]] += weight
 
         if matrix_type == "csr":
             return s.tocsr()
