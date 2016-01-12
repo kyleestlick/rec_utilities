@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from parsers.wos import WOS
+from parsers.wos import WOSStream, WOSTree
 from util.PajekFactory import PajekFactory
 from util.misc import open_file, Checkpoint
 
@@ -7,6 +7,7 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Creates Pajek (.net) files from WOS XML")
     parser.add_argument('outfile')
+    parser.add_argument('-t', '--tree', help="Usage tree parser instead of stream", action="store_true")
     parser.add_argument('infile', nargs='+')
     args = parser.parse_args()
 
@@ -18,7 +19,10 @@ if __name__ == "__main__":
     for file in args.infile:
         print(chk.checkpoint("Parsing {}: {}/{}: {:.2%}".format(file, parsed, total_files, parsed/float(total_files))))
         f = open_file(file)
-        parser = WOS(f)
+        if args.tree:
+            parser = WOSTree(f)
+        else:
+            parser = WOSStream(f)
         for entry in parser.parse():
             for citation in entry["citations"]:
                 pjk.add_edge(entry["id"], citation)
