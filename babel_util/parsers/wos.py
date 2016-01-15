@@ -15,18 +15,6 @@ def parse_reference(ref):
     return ref.findtext("wok:uid", namespaces=WOS_NS)
 
 
-class WOSTree(object):
-    """Parser for Thompson-Reuters WebOfScience"""
-
-    def __init__(self, stream):
-        self.tree = ET.parse(stream)
-
-    def parse(self):
-        for child in self.tree.getroot():
-            md = {"id": child.findtext("wok:UID", namespaces=WOS_NS),
-                  "citations": list(filter(None, map(parse_reference, child.findall(".//wok:reference", namespaces=WOS_NS))))} #Filter to remove empty references <reference/>
-            yield md
-
 class WOSStream(ContentHandler):
     def __init__(self, stream):
         self.tree = ET.iterparse(stream)
@@ -34,17 +22,30 @@ class WOSStream(ContentHandler):
         self._UID = make_ns_key("UID")
         self._uid = make_ns_key("uid")
         self._REC = make_ns_key("REC")
+        self._title = make_ns_key("title")
+        self._identifier = make_ns_key("identifier")
+        self._pub_info = make_ns_key("pub_info")
+        self.md = {"citations": []}
 
     def parse(self):
-        md = {"citations": []}
         for event, elem in self.tree:
             if elem.tag == self._UID:
-                md["id"] = elem.text
+                self.md["id"] = elem.text
             elif elem.tag == self._uid:
-                md["citations"].append(elem.text)
+                self.md["citations"].append(elem.text)
+            elif elem.tag == self._title:
+                if elem.attrib["type"] == "item":
+                    self.md["title"] = elem.text
+                elif elem.attrib["type"] == "source":
+                    self.md["publication"] = elem.text
+            elif elem.tag == self._identifier and elem.attrib["type"] == "doi":
+                self.md["doi"] = elem.attrib["value"]
+            elif elem.tag == self._pub_info:
+                self.md["date"] = elem.attrib["sortdate"]
+                self.md["pub_type"] = elem.attrib["pubtype"]
             elif elem.tag == self._REC:
-                yield md
-                md.clear()
-                md["citations"] = []
+                yield self.md
+                self.md.clear()
+                self.md["citations"] = []
             elem.clear()
 
