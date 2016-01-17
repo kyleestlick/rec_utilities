@@ -48,6 +48,9 @@ class AutoID(object):
     def __setitem__(self, key, value):
         self.ids[key] = value
 
+    def __contains__(self, item):
+        return item in self.ids
+
     def __len__(self):
         return len(self.ids)
 
