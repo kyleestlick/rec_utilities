@@ -11,13 +11,12 @@ class PajekFactory(object):
             edge_stream: If provided, a stream that edges will be written to instead of storing in memory.
             node_stream: If provided, a stream that nodes will be written to instead of storing in memory.
         """
-        self.ids = AutoID(first_id=1)
+        self.ids = AutoID(first_id=0)
         self.edge_stream = edge_stream
         self.node_stream = node_stream
         self.edges = list()
 
         self.edge_count = 0
-        self.node_count = 0
 
     def add_edge(self, source, dest):
         """Add an edge from source to dest.
@@ -33,29 +32,28 @@ class PajekFactory(object):
         """
 
         write_source = source not in self.ids
-        write_dest = dest not in self.ids
         sid = self.ids[source]
+
+        write_dest = dest not in self.ids
         did = self.ids[dest]
 
         if self.node_stream:
             if write_source:
                 self.node_stream.write('%s "%s"\n' % (sid, source))
-                self.node_count += 1
             if write_dest:
                 self.node_stream.write('%s "%s"\n' % (did, dest))
-                self.node_count += 1
 
         if self.edge_stream:
             self.edge_stream.write("%s %s\n" % (sid, did))
             self.edge_count += 1
         else:
-            self.edges.append((self.ids[source], self.ids[dest]))
+            self.edges.append(sid, did)
 
     def make_header(self):
-        vtx ="*vertices {}\n".format(self.node_count)
+        vtx = "*vertices {}\n".format(len(self.ids))
         edge = "*edges {}\n".format(self.edge_count)
 
-        return (vtx, edge)
+        return vtx, edge
 
     def write(self, output):
         output.write("*vertices {}\n".format(len(self.ids)))
@@ -68,4 +66,4 @@ class PajekFactory(object):
             output.write("{} {}\n".format(*edge))
 
     def __str__(self):
-        return "<PJK {} vertices, {} edges>".format(self.node_count, self.edge_count)
+        return "<PJK {} vertices, {} edges>".format(len(self.ids), self.edge_count)

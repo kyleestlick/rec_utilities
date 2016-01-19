@@ -12,8 +12,8 @@ if __name__ == "__main__":
 
     chk = Checkpoint()
 
-    nodes = args.outfile + ".nodes.gz"
-    edges = args.outfile + ".edges.gz"
+    nodes = args.outfile + ".nodes"
+    edges = args.outfile + ".edges"
 
     nodes_f = open_file(nodes, "w")
     edges_f = open_file(edges, "w")
