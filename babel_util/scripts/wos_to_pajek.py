@@ -7,6 +7,7 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Creates Pajek (.net) files from WOS XML")
     parser.add_argument('outfile')
+    parser.add_argument('--wos-only', action="store_true", help="Only include nodes/edges in WOS")
     parser.add_argument('infile', nargs='+')
     args = parser.parse_args()
 
@@ -24,7 +25,7 @@ if __name__ == "__main__":
     for file in args.infile:
         print(chk.checkpoint("Parsing {}: {}/{}: {:.2%}".format(file, parsed, total_files, parsed/float(total_files))))
         f = open_file(file)
-        parser = WOSStream(f)
+        parser = WOSStream(f, args.wos_only)
         for entry in parser.parse():
             if "citations" in entry:
                 for citation in entry["citations"]:
