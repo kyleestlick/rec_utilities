@@ -15,14 +15,6 @@ def main(dimension, infile, outfile, delimiter=' ', numRecs=10):
     import itertools
     from scipy.sparse import dok_matrix
     import numpy as np
-    import six
-
-    if isinstance(infile, six.string_types):
-        infile = open(infile, 'r')
-
-    if isinstance(outfile, six.string_types):
-        outfile = open(outfile, 'w')
-
 
     S = dok_matrix((dimension, dimension), dtype=np.uint8)
     paper_ids = defaultdict(get_next_id)
