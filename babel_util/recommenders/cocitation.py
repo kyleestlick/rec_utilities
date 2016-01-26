@@ -10,14 +10,19 @@ def get_next_id():
     current_idx += 1
     return current_idx - 1
 
-def main(dimension, infile, outfile, cmdline=False, delimiter=' ', numRecs=10):
+def main(dimension, infile, outfile, delimiter=' ', numRecs=10):
     from collections import defaultdict
     import itertools
     from scipy.sparse import dok_matrix
     import numpy as np
+    import six
 
-    if not cmdline:
+    if isinstance(infile, six.string_types):
         infile = open(infile, 'r')
+
+    if isinstance(outfile, six.string_types):
+        outfile = open(outfile, 'w')
+
 
     S = dok_matrix((dimension, dimension), dtype=np.uint8)
     paper_ids = defaultdict(get_next_id)
@@ -35,8 +40,6 @@ def main(dimension, infile, outfile, cmdline=False, delimiter=' ', numRecs=10):
 
     paper_ids = invert_dict(paper_ids)
 
-    returnString = []
-
     for i in xrange(S.shape[0]):
         row = S.getrow(i).tocoo()
         recs = [(j, v) for j, v in itertools.izip(row.col, row.data)]
@@ -47,13 +50,7 @@ def main(dimension, infile, outfile, cmdline=False, delimiter=' ', numRecs=10):
             sEntry = "{0} {1} {2}\n".format(paper_ids[i],
                                                       paper_ids[entry[0]],
                                                       entry[1])
-            if cmdline:
-                outfile.write(sEntry)
-            else:
-                returnString.append(sEntry)
-
-    if not cmdline:
-        return ''.join(returnString)
+            outfile.write(sEntry)
 
 if __name__ == "__main__":
     import argparse
