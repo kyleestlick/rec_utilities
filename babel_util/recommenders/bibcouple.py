@@ -42,13 +42,6 @@ def main(dimension, infile, outfile, delimiter=' ', numRecs=10):
             sEntry = "{0} {1} {2}\n".format(paper_ids[i], paper_ids[entry[0]], entry[1])
             outfile.write(sEntry)
 
-def peek_line(f):
-    '''for debug'''
-    pos = f.tell()
-    line = f.readline()
-    f.seek(pos)
-    return line
-
 if __name__ == "__main__":
     import argparse
     import sys
