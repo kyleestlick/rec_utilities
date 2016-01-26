@@ -26,8 +26,9 @@ if __name__ == "__main__":
         f = open_file(file)
         parser = WOSStream(f)
         for entry in parser.parse():
-            for citation in entry["citations"]:
-                pjk.add_edge(entry["id"], citation)
+            if "citations" in entry:
+                for citation in entry["citations"]:
+                    pjk.add_edge(entry["id"], citation)
         print(chk.checkpoint(" Done: "+str(pjk)))
         parsed += 1
 
