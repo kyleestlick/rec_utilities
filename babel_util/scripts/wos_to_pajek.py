@@ -4,6 +4,7 @@ from util.PajekFactory import PajekFactory
 from util.misc import open_file
 from multiprocessing import Process, JoinableQueue
 from datetime import datetime
+import platform
 
 
 def wos_parser(files, entries, wos_only, sample_rate, must_cite):
@@ -18,18 +19,25 @@ def wos_parser(files, entries, wos_only, sample_rate, must_cite):
 
 def pjk_writer(entries, pjk):
     count = 0
+    last_count = 0
     last_time = datetime.now()
+    linux = platform.system()
     for entry in iter(entries.get, 'STOP'):
         if "citations" in entry:
             for citation in entry["citations"]:
                 pjk.add_edge(entry["id"], citation)
         entries.task_done()
         count += 1
-        if count % 500 == 0:
+        if count % 1000 == 0:
             deltaT = datetime.now() - last_time
+            deltaC = count - last_count
             if deltaT.seconds: #Sometimes we are just too fast
-                print("{} entries process: {:.2f} entries/s".format(count, count/deltaT.seconds))
+                if linux:
+                    print("{} entries process: {:.2f} entries/s {} queue depth".format(count, deltaC/deltaT.seconds, entries.qsize()))
+                else:
+                    print("{} entries process: {:.2f} entries/s".format(count, deltaC/deltaT.seconds))
             last_time = datetime.now()
+            last_count = count
     print(pjk)
 
 
