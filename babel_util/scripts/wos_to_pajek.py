@@ -4,7 +4,7 @@ from util.PajekFactory import PajekFactory
 from util.misc import open_file
 from multiprocessing import Process, JoinableQueue
 from datetime import datetime
-import platform
+from io import StringIO
 
 
 def wos_parser(files, entries, wos_only, sample_rate, must_cite, batch_size):
@@ -24,30 +24,22 @@ def wos_parser(files, entries, wos_only, sample_rate, must_cite, batch_size):
     files.task_done()
 
 
-def pjk_writer(entries, pjk):
+def pjk_writer(entries, output_file):
+    pjk = PajekFactory(edge_stream=StringIO(), node_stream=StringIO())
     count = 0
-    last_count = 0
-    last_time = datetime.now()
-    linux = platform.system()
+    start_time = datetime.now()
     for entry_list in iter(entries.get, 'STOP'):
         for entry in entry_list:
             for citation in entry["citations"]:
                 pjk.add_edge(entry["id"], citation)
-
             count += 1
-            if count % 1000 == 0:
-                deltaT = datetime.now() - last_time
-                deltaC = count - last_count
-                if deltaT.seconds: #Sometimes we are just too fast
-                    if linux:
-                        print("{} entries process: {:.2f} entries/s {} queue depth".format(count, deltaC/float(deltaT.seconds), entries.qsize()))
-                    else:
-                        print("{} entries process: {:.2f} entries/s".format(count, deltaC/float(deltaT.seconds)))
-                last_time = datetime.now()
-                last_count = count
         entries.task_done()
-    print(pjk)
 
+    deltaT = datetime.now() - start_time
+    print("{} entries processed: {:.2f} entries/s".format(count, 10**6*count/float(deltaT.microseconds)))
+    print(pjk)
+    #with open_file(arguments.outfile, "w") as f:
+    #    pjk.write(f)
 
 if __name__ == "__main__":
     import argparse
@@ -63,7 +55,6 @@ if __name__ == "__main__":
 
     file_queue = JoinableQueue()
     result_queue = JoinableQueue()
-    pjk = PajekFactory()
 
     for file in arguments.infile:
         file_queue.put_nowait(file)
@@ -79,10 +70,8 @@ if __name__ == "__main__":
                                          arguments.must_cite,
                                          arguments.batch_size)).start()
 
-    Process(target=pjk_writer, args=(result_queue, pjk)).start()
+    Process(target=pjk_writer, args=(result_queue, arguments.outfile)).start()
 
     file_queue.join()
     result_queue.join()
     result_queue.put_nowait('STOP')
-    with open_file(arguments.outfile, "w") as f:
-        pjk.write(f)
