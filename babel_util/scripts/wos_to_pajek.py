@@ -7,12 +7,19 @@ from datetime import datetime
 import platform
 
 
-def wos_parser(files, entries, wos_only, sample_rate, must_cite):
+def wos_parser(files, entries, wos_only, sample_rate, must_cite, batch_size):
+    batch = []
     for filename in iter(files.get, 'STOP'):
         with open_file(filename) as f:
             p = WOSStream(f, wos_only=wos_only, sample_rate=sample_rate, must_cite=must_cite)
             for entry in p.parse():
-                entries.put(entry)
+                batch.append(entry)
+                if len(batch) > batch_size:
+                    entries.put(batch)
+                    batch.clear()
+        if len(batch):
+            entries.put(batch)
+            batch.clear()
         files.task_done()
     files.task_done()
 
@@ -22,10 +29,11 @@ def pjk_writer(entries, pjk):
     last_count = 0
     last_time = datetime.now()
     linux = platform.system()
-    for entry in iter(entries.get, 'STOP'):
-        if "citations" in entry:
-            for citation in entry["citations"]:
-                pjk.add_edge(entry["id"], citation)
+    for entry_list in iter(entries.get, 'STOP'):
+        for entry in entry_list:
+            if "citations" in entry:
+                for citation in entry["citations"]:
+                    pjk.add_edge(entry["id"], citation)
         entries.task_done()
         count += 1
         if count % 1000 == 0:
@@ -33,9 +41,9 @@ def pjk_writer(entries, pjk):
             deltaC = count - last_count
             if deltaT.seconds: #Sometimes we are just too fast
                 if linux:
-                    print("{} entries process: {:.2f} entries/s {} queue depth".format(count, deltaC/deltaT.seconds, entries.qsize()))
+                    print("{} entries process: {:.2f} entries/s {} queue depth".format(count, deltaC/float(deltaT.seconds), entries.qsize()))
                 else:
-                    print("{} entries process: {:.2f} entries/s".format(count, deltaC/deltaT.seconds))
+                    print("{} entries process: {:.2f} entries/s".format(count, deltaC/float(deltaT.seconds)))
             last_time = datetime.now()
             last_count = count
     print(pjk)
@@ -49,6 +57,7 @@ if __name__ == "__main__":
     parser.add_argument('--sample-rate', help="Edge sample rate", type=float, default=None)
     parser.add_argument('--must-cite', action="store_true", help="Only include nodes that cite other nodes")
     parser.add_argument('-n', '--num-processes', help="Number of subprocesses to start", default=4, type=int)
+    parser.add_argument('-b', '--batch-size', help="Number of entries to batch prior to transmission", default=100, type=int)
     parser.add_argument('infile', nargs='+')
     arguments = parser.parse_args()
 
@@ -63,7 +72,12 @@ if __name__ == "__main__":
         file_queue.put_nowait('STOP')
 
     for i in range(arguments.num_processes):
-        Process(target=wos_parser, args=(file_queue, result_queue, arguments.wos_only, arguments.sample_rate, arguments.must_cite)).start()
+        Process(target=wos_parser, args=(file_queue,
+                                         result_queue,
+                                         arguments.wos_only,
+                                         arguments.sample_rate,
+                                         arguments.must_cite,
+                                         arguments.batch_size)).start()
 
     Process(target=pjk_writer, args=(result_queue, pjk)).start()
 
