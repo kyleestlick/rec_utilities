@@ -14,12 +14,12 @@ def wos_parser(files, entries, wos_only, sample_rate, must_cite, batch_size):
             p = WOSStream(f, wos_only=wos_only, sample_rate=sample_rate, must_cite=must_cite)
             for entry in p.parse():
                 batch.append(entry)
-                if len(batch) > batch_size:
+                if len(batch) >= batch_size:
                     entries.put(batch)
-                    batch.clear()
+                    batch = []
         if len(batch):
             entries.put(batch)
-            batch.clear()
+            batch = []
         files.task_done()
     files.task_done()
 
@@ -31,21 +31,21 @@ def pjk_writer(entries, pjk):
     linux = platform.system()
     for entry_list in iter(entries.get, 'STOP'):
         for entry in entry_list:
-            if "citations" in entry:
-                for citation in entry["citations"]:
-                    pjk.add_edge(entry["id"], citation)
+            for citation in entry["citations"]:
+                pjk.add_edge(entry["id"], citation)
+
+            count += 1
+            if count % 1000 == 0:
+                deltaT = datetime.now() - last_time
+                deltaC = count - last_count
+                if deltaT.seconds: #Sometimes we are just too fast
+                    if linux:
+                        print("{} entries process: {:.2f} entries/s {} queue depth".format(count, deltaC/float(deltaT.seconds), entries.qsize()))
+                    else:
+                        print("{} entries process: {:.2f} entries/s".format(count, deltaC/float(deltaT.seconds)))
+                last_time = datetime.now()
+                last_count = count
         entries.task_done()
-        count += 1
-        if count % 1000 == 0:
-            deltaT = datetime.now() - last_time
-            deltaC = count - last_count
-            if deltaT.seconds: #Sometimes we are just too fast
-                if linux:
-                    print("{} entries process: {:.2f} entries/s {} queue depth".format(count, deltaC/float(deltaT.seconds), entries.qsize()))
-                else:
-                    print("{} entries process: {:.2f} entries/s".format(count, deltaC/float(deltaT.seconds)))
-            last_time = datetime.now()
-            last_count = count
     print(pjk)
 
 
