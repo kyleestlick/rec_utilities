@@ -27,7 +27,8 @@ def pjk_writer(entries, pjk):
         count += 1
         if count % 500 == 0:
             deltaT = datetime.now() - last_time
-            print("{} entries process: {:.2f} entries/s".format(count, count/deltaT.seconds))
+            if deltaT.seconds: #Sometimes we are just too fast
+                print("{} entries process: {:.2f} entries/s".format(count, count/deltaT.seconds))
             last_time = datetime.now()
     print(pjk)
 
