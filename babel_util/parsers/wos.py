@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import xml.etree.ElementTree as ET
 from xml.sax import ContentHandler
+from random import uniform
 
 WOS_NS = "http://scientific.thomsonreuters.com/schema/wok5.4/public/FullRecord"
 SKIP_LEN = len(WOS_NS) + 2  # {} enclose the namespace
@@ -67,6 +68,21 @@ def is_wos(entry_id):
     return entry_id[:4] == "WOS:"
 
 
+def filter_wos_only(entry):
+    if not is_wos(entry["id"]):
+        return None
+    entry["citations"] = list(filter(is_wos, entry["citations"]))
+    return entry
+
+
+def has_citations(entry):
+    return len(entry["citations"]) > 0
+
+
+def sample_edges(threshold, entry):
+    entry["citations"] = list(filter(lambda x: uniform(0, 1) < threshold, entry["citations"]))
+    return entry
+
 SD = "records/REC/static_data/"
 SDS = SD + "summary/"
 PARSERS = {"records/REC/UID": parse_id,
@@ -92,10 +108,12 @@ def stub_md():
 
 
 class WOSStream(ContentHandler):
-    def __init__(self, stream, wos_only=False):
+    def __init__(self, stream, wos_only=False, sample_rate=None, must_cite=False):
         self.tree = ET.iterparse(stream, events=("start", "end"))
         self.path = []
         self.wos_only = wos_only
+        self.sample_rate = sample_rate
+        self.must_cite = must_cite
 
     def parse(self):
         md = stub_md()
@@ -112,11 +130,12 @@ class WOSStream(ContentHandler):
 
                 if elem.tag == "REC":
                     if self.wos_only:
-                        if is_wos(md["id"]):
-                            md["citations"] = list(filter(is_wos, md["citations"]))
-                            if len(md["citations"]):
-                                yield md
-                    else:
+                        md = filter_wos_only(md)
+                    if self.sample_rate and md:
+                        md = sample_edges(self.sample_rate, md)
+                    if self.must_cite and md and not has_citations(md):
+                        md = None
+                    if md:
                         yield md
                     md = stub_md()
                 elem.clear()

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import unittest
 import pprint
-from parsers.wos import WOSStream
+from parsers.wos import WOSStream, sample_edges, has_citations
 
 NOWOS_XML = "test_nowos.xml"
 SMALL_XML = "test_small.xml"
@@ -34,13 +34,29 @@ class TestWOSStream(unittest.TestCase):
             self._pp.pprint(entry)
 
     def test_parse_nowos(self):
-        parser = WOSStream(NOWOS_XML, True)
-        for entry in parser.parse():
-            raise "This shouldn't ever happen"
+        parser = WOSStream(NOWOS_XML, wos_only=True)
+        entries = [e for e in parser.parse()]
+        result = SMALL_PARSED
+        result["title"] = "Potatoes"
+        result["citations"] = []
+        self.assertDictEqual(entries[0], result)
 
-        parser = WOSStream(SMALL_XML, True)
-        for entry in parser.parse():
-            self.assertDictEqual(entry, SMALL_PARSED)
+        parser = WOSStream(NOWOS_XML, wos_only=True, must_cite=True)
+        entries = [e for e in parser.parse()]
+        self.assertListEqual(entries, [])
+
+    def test_must_cite(self):
+        no_cite = {"citations": []}
+        citations = {"citations": ["Potatoes"]}
+        self.assertTrue(has_citations(citations))
+        self.assertFalse(has_citations(no_cite))
+
+    def test_sample(self):
+        citations = {"citations": [1,2,3,4,5], "othersuff": "nahh"}
+        empty_sample = citations
+        empty_sample["citations"] = []
+        self.assertDictEqual(sample_edges(1, citations), citations)
+        self.assertDictEqual(sample_edges(0, citations), empty_sample)
 
 if __name__ == '__main__':
     unittest.main()
