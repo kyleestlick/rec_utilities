@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from .AutoID import AutoID, invert_dict
+from .AutoID import AutoID
 from shutil import copyfileobj
 from tempfile import TemporaryFile
 
