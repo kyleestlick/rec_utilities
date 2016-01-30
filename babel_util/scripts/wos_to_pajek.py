@@ -4,7 +4,6 @@ from util.PajekFactory import PajekFactory
 from util.misc import open_file
 from multiprocessing import Process, JoinableQueue
 from datetime import datetime
-from io import StringIO
 
 
 def wos_parser(files, entries, wos_only, sample_rate, must_cite, batch_size):
@@ -25,7 +24,7 @@ def wos_parser(files, entries, wos_only, sample_rate, must_cite, batch_size):
 
 
 def pjk_writer(entries, output_file):
-    pjk = PajekFactory(edge_stream=StringIO(), node_stream=StringIO())
+    pjk = PajekFactory()
     count = 0
     start_time = datetime.now()
     for entry_list in iter(entries.get, 'STOP'):
@@ -33,13 +32,17 @@ def pjk_writer(entries, output_file):
             for citation in entry["citations"]:
                 pjk.add_edge(entry["id"], citation)
             count += 1
+            if count % 10000 == 0:
+                deltaT = datetime.now() - start_time
+                print("{} entries processed: {:.2f} entries/s".format(count, 10**6*count/float(deltaT.microseconds)))
         entries.task_done()
 
     deltaT = datetime.now() - start_time
     print("{} entries processed: {:.2f} entries/s".format(count, 10**6*count/float(deltaT.microseconds)))
     print(pjk)
-    #with open_file(arguments.outfile, "w") as f:
-    #    pjk.write(f)
+    with open_file(arguments.outfile, "w") as f:
+        pjk.write(f)
+    entries.task_done()
 
 if __name__ == "__main__":
     import argparse
@@ -75,3 +78,4 @@ if __name__ == "__main__":
     file_queue.join()
     result_queue.join()
     result_queue.put_nowait('STOP')
+    result_queue.join()
