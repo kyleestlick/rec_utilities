@@ -1,5 +1,8 @@
 #!/usr/bin/env python
-from .AutoID import AutoID, invert_dict
+from .AutoID import AutoID
+from shutil import copyfileobj
+from tempfile import TemporaryFile
+
 
 class PajekFactory(object):
     """Factory to build a Pajek file"""
@@ -8,13 +11,17 @@ class PajekFactory(object):
         """Build a Pajek Writer.
 
         Args:
-            edge_stream: If provided, a stream that edges will be written to instead of storing in memory.
-            node_stream: If provided, a stream that nodes will be written to instead of storing in memory.
+            edge_stream: If provided, a stream that edges will be written to. Otherwise a temporary file is used.
+            node_stream: If provided, a stream that nodes will be written to. Otherwise a temporary file is used.
         """
-        self.ids = AutoID(first_id=0)
+        self.ids = AutoID(first_id=1)
         self.edge_stream = edge_stream
         self.node_stream = node_stream
-        self.edges = list()
+
+        if not self.edge_stream:
+            self.edge_stream = TemporaryFile("w+")
+        if not self.node_stream:
+            self.node_stream = TemporaryFile("w+")
 
         self.edge_count = 0
 
@@ -37,33 +44,24 @@ class PajekFactory(object):
         write_dest = dest not in self.ids
         did = self.ids[dest]
 
-        if self.node_stream:
-            if write_source:
-                self.node_stream.write('%s "%s"\n' % (sid, source))
-            if write_dest:
-                self.node_stream.write('%s "%s"\n' % (did, dest))
+        #TODO: Make a version of AutoID that just writes out nodes for us
+        if write_source:
+            self.node_stream.write('%s "%s"\n' % (sid, source))
+        if write_dest:
+            self.node_stream.write('%s "%s"\n' % (did, dest))
 
-        if self.edge_stream:
-            self.edge_stream.write("%s %s\n" % (sid, did))
-            self.edge_count += 1
-        else:
-            self.edges.append(sid, did)
-
-    def make_header(self):
-        vtx = "*vertices {}\n".format(len(self.ids))
-        edge = "*edges {}\n".format(self.edge_count)
-
-        return vtx, edge
+        self.edge_stream.write("%s %s\n" % (sid, did))
+        self.edge_count += 1
 
     def write(self, output):
-        output.write("*vertices {}\n".format(len(self.ids)))
-        invert = invert_dict(self.ids)
-        for n in sorted(invert.keys()):
-            output.write("{} \"{}\"\n".format(n, invert[n]))
+        """Write pajek file to output"""
+        self.edge_stream.seek(0)
+        self.node_stream.seek(0)
 
-        output.write("*edges {}\n".format(len(self.edges)))
-        for edge in self.edges:
-            output.write("{} {}\n".format(*edge))
+        output.write("*vertices {}\n".format(len(self.ids)))
+        copyfileobj(self.node_stream, output)
+        output.write("*edges {}\n".format(self.edge_count))
+        copyfileobj(self.edge_stream, output)
 
     def __str__(self):
         return "<PJK {} vertices, {} edges>".format(len(self.ids), self.edge_count)
