@@ -54,4 +54,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    main(args.dimension, args.infile, args.outfile, True, args.delimiter, args.n)
+    main(args.dimension, args.infile, args.outfile, args.delimiter, args.n)
