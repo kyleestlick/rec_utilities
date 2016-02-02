@@ -33,7 +33,7 @@ def pjk_writer(entries, output_file):
                 pjk.add_edge(entry["id"], citation)
             count += 1
             if count % 10000 == 0:
-                deltaT = datetime.now() - start_time
+                deltaT = datetime.datetime.now() - start_time
                 print("{} entries processed: {:.2f} entries/s".format(count, 10**6*count/float(deltaT.microseconds)))
         entries.task_done()
 
