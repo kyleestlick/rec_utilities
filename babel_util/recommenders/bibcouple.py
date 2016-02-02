@@ -39,8 +39,7 @@ def main(dimension, infile, outfile, delimiter=' ', numRecs=10):
         recs = filter(lambda x: x[0] != i, recs)
         recs.sort(key=lambda x: x[1], reverse=True)
         for entry in recs[:numRecs]:
-            sEntry = "{0} {1} {2}\n".format(paper_ids[i], paper_ids[entry[0]], entry[1])
-            outfile.write(sEntry)
+            outfile.write("{0} {1} {2}\n".format(paper_ids[i], paper_ids[entry[0]], entry[1]))
 
 if __name__ == "__main__":
     import argparse
