@@ -3,14 +3,14 @@ from parsers.wos import WOSStream
 from util.PajekFactory import PajekFactory
 from util.misc import open_file
 from multiprocessing import Process, JoinableQueue
-from datetime import datetime
+import datetime
 
 
-def wos_parser(files, entries, wos_only, sample_rate, must_cite, batch_size):
+def wos_parser(files, entries, wos_only, sample_rate, must_cite, batch_size, date_after):
     batch = []
     for filename in iter(files.get, 'STOP'):
         with open_file(filename) as f:
-            p = WOSStream(f, wos_only=wos_only, sample_rate=sample_rate, must_cite=must_cite)
+            p = WOSStream(f, wos_only=wos_only, sample_rate=sample_rate, must_cite=must_cite, date_after=date_after)
             for entry in p.parse():
                 batch.append(entry)
                 if len(batch) >= batch_size:
@@ -26,7 +26,7 @@ def wos_parser(files, entries, wos_only, sample_rate, must_cite, batch_size):
 def pjk_writer(entries, output_file):
     pjk = PajekFactory()
     count = 0
-    start_time = datetime.now()
+    start_time = datetime.datetime.now()
     for entry_list in iter(entries.get, 'STOP'):
         for entry in entry_list:
             for citation in entry["citations"]:
@@ -37,7 +37,7 @@ def pjk_writer(entries, output_file):
                 print("{} entries processed: {:.2f} entries/s".format(count, 10**6*count/float(deltaT.microseconds)))
         entries.task_done()
 
-    deltaT = datetime.now() - start_time
+    deltaT = datetime.datetime.now() - start_time
     print("{} entries processed: {:.2f} entries/s".format(count, 10**6*count/float(deltaT.microseconds)))
     print(pjk)
     with open_file(arguments.outfile, "w") as f:
@@ -53,11 +53,16 @@ if __name__ == "__main__":
     parser.add_argument('--must-cite', action="store_true", help="Only include nodes that cite other nodes")
     parser.add_argument('-n', '--num-processes', help="Number of subprocesses to start", default=4, type=int)
     parser.add_argument('-b', '--batch-size', help="Number of entries to batch prior to transmission", default=100, type=int)
+    parser.add_argument('-a', '--after', help="Only include nodes published on or after this year")
     parser.add_argument('infile', nargs='+')
     arguments = parser.parse_args()
 
     file_queue = JoinableQueue()
     result_queue = JoinableQueue()
+
+    date_after = None
+    if arguments.after:
+        date_after = datetime.datetime.strptime(arguments.after, "%Y")
 
     for file in arguments.infile:
         file_queue.put_nowait(file)
@@ -71,7 +76,8 @@ if __name__ == "__main__":
                                          arguments.wos_only,
                                          arguments.sample_rate,
                                          arguments.must_cite,
-                                         arguments.batch_size)).start()
+                                         arguments.batch_size,
+                                         date_after)).start()
 
     Process(target=pjk_writer, args=(result_queue, arguments.outfile)).start()
 

@@ -2,13 +2,14 @@
 import unittest
 import pprint
 from parsers.wos import WOSStream, sample_edges, has_citations
+import datetime
 
 NOWOS_XML = "test_nowos.xml"
 SMALL_XML = "test_small.xml"
 SMALL_PARSED = {'id': "WOS:000334657000026",
                 'title': "In Memoriam: Harry Meinardi (February 20, 1932-December 20, 2013)",
                 'doi': '10.1111/epi.12578',
-                'date': '2014-04-01',
+                'date': datetime.datetime(2014, 4, 1, 0, 0),
                 'publication': 'EPILEPSIA',
                 'pub_type': 'Journal',
                 'authors': ['Perucca, E', 'Reynolds, EH'],
@@ -51,8 +52,16 @@ class TestWOSStream(unittest.TestCase):
         self.assertTrue(has_citations(citations))
         self.assertFalse(has_citations(no_cite))
 
+    def test_after_date(self):
+        parser = WOSStream(SMALL_XML, date_after=datetime.datetime.strptime("2015", "%Y"))
+        for entry in parser.parse():
+            raise "This shouldn't ever happen"
+        parser = WOSStream(SMALL_XML, date_after=datetime.datetime.strptime("2014", "%Y"))
+        for entry in parser.parse():
+            self.assertDictEqual(entry, SMALL_PARSED)
+
     def test_sample(self):
-        citations = {"citations": [1,2,3,4,5], "othersuff": "nahh"}
+        citations = {"citations": [1, 2, 3, 4, 5], "othersuff": "nahh"}
         empty_sample = citations
         empty_sample["citations"] = []
         self.assertDictEqual(sample_edges(1, citations), citations)

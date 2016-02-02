@@ -2,6 +2,7 @@
 import xml.etree.ElementTree as ET
 from xml.sax import ContentHandler
 from random import uniform
+import datetime
 
 WOS_NS = "http://scientific.thomsonreuters.com/schema/wok5.4/public/FullRecord"
 SKIP_LEN = len(WOS_NS) + 2  # {} enclose the namespace
@@ -15,7 +16,7 @@ def make_ns_key(key):
 def parse_pubinfo(x):
     e, md = x
     if e.tag == "pub_info":
-        md["date"] = e.attrib["sortdate"]
+        md["date"] = datetime.datetime.strptime(e.attrib["sortdate"], "%Y-%m-%d")
         md["pub_type"] = e.attrib["pubtype"]
 
 
@@ -108,12 +109,15 @@ def stub_md():
 
 
 class WOSStream(ContentHandler):
-    def __init__(self, stream, wos_only=False, sample_rate=None, must_cite=False):
+    def __init__(self, stream, wos_only=False, sample_rate=None, must_cite=False, date_after=None):
         self.tree = ET.iterparse(stream, events=("start", "end"))
         self.path = []
         self.wos_only = wos_only
         self.sample_rate = sample_rate
         self.must_cite = must_cite
+        if date_after and not isinstance(date_after, datetime.datetime):
+            raise ValueError("date_after must be a datetime.datetime")
+        self.date_after = date_after
 
     def parse(self):
         md = stub_md()
@@ -129,7 +133,10 @@ class WOSStream(ContentHandler):
                 self.path.pop()
 
                 if elem.tag == "REC":
-                    if self.wos_only:
+                    if self.date_after and md:
+                        if not md["date"] or md["date"] < self.date_after:
+                            md = None
+                    if self.wos_only and md:
                         md = filter_wos_only(md)
                     if self.sample_rate and md:
                         md = sample_edges(self.sample_rate, md)
