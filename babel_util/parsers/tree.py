@@ -2,9 +2,9 @@
 import logging
 import networkx as nx
 
+
 class TreeFile(object):
-    """Handling functions for tree files, as produced by the EigenFactor
-    Recommends algorithm.
+    """Handling functions for tree files, as produced by Infomap.
 
     The file should be a plain text file with the following format:
     <cluster_id> <score> <paper_id>
@@ -54,7 +54,7 @@ class TreeFile(object):
                 if on_collide == "error":
                     raise KeyError("Duplicate paper_id: {0}".format(pid))
                 elif on_collide == "warn":
-                    logging.warn("Duplicate paper_id: {0}".format(pid))
+                    logging.warning("Duplicate paper_id: {0}".format(pid))
                 elif on_collide == "info":
                     logging.info("Duplicate paper_id: {0}".format(pid))
 
@@ -86,7 +86,7 @@ class TreeFile(object):
 
             # This means we found an orphan
             if len(clusters) == 0:
-                G.add_node(pid, {"score":score})
+                G.add_node(pid, {"score": score})
                 break
 
             i = ":".join(clusters)
@@ -108,8 +108,8 @@ class TreeFile(object):
         self._iter = iter(self.stream)
         return self
 
-    def next(self):
-        line = self._iter.next()
+    def __next__(self):
+        line = next(self._iter)
         while self.comment and line.startswith(self.comment):
             line = self._iter.next()
         return self.parse_line(line)
@@ -120,8 +120,8 @@ class TreeFile(object):
             pid = pid.strip().strip('"')
             return cid, float(score), pid
         except ValueError:
-            print line
+            print(line)
             raise
         except AttributeError:
-            print line
+            print(line)
             raise
