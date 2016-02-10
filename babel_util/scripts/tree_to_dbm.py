@@ -21,7 +21,7 @@ if __name__ == "__main__":
     with shelve.open(args.shelf, flag='n', protocol=pickle.HIGHEST_PROTOCOL) as s:
         for recs in make_expert_rec(tf, args.limit):
             recd = [r.pid for r in recs]
-            s[recs[0].target_pid] = recd
+            s['expert|'+recs[0].target_pid] = recd
             count += 1
             if count % 10000 == 0:
                 print("%s entry/s" % round(count/(time.time() - start), 2))
@@ -30,7 +30,7 @@ if __name__ == "__main__":
         tf = TreeFile(args.infile)
         for recs in make_classic_recs(tf, args.limit):
             recd = [r.pid for r in recs]
-            s[recs[0].target_pid] = recd
+            s['classic|'+recs[0].target_pid] = recd
             count += 1
             if count % 10000 == 0:
                 print("%s entry/s" % round(count/(time.time() - start), 2))
