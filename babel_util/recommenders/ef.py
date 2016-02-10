@@ -67,7 +67,10 @@ def make_expert_rec(stream, rec_limit=10):
         for paper in candidates:
             # A paper shouldn't recommend itself
             topn = list(filter(lambda e: e.pid != paper.pid, candidates[:rec_limit+1]))
-            yield list(map(lambda r: ExpertRec(paper.pid, r.pid, r.score), topn[:rec_limit]))
+            res = list(map(lambda r: ExpertRec(paper.pid, r.pid, r.score), topn[:rec_limit]))
+            if len(res):
+                yield res
+
 
 
 def make_classic_recs(stream, rec_limit=10):
@@ -88,7 +91,9 @@ def make_classic_recs(stream, rec_limit=10):
         for paper in candidates:
             # A paper shouldn't recommend itself
             topn = list(filter(lambda e: e.pid != paper.pid, candidates[:rec_limit+1]))
-            yield list(map(lambda r: ClassicRec(paper.pid, r.pid, r.score), topn[:rec_limit]))
+            res = list(map(lambda r: ClassicRec(paper.pid, r.pid, r.score), topn[:rec_limit]))
+            if len(res):
+                yield res
 
 if __name__ == "__main__":
     import argparse

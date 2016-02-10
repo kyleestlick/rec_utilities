@@ -59,6 +59,7 @@ class TestTreeFile(unittest.TestCase):
         ('1:1:1:3 7.9441e-05 "1935620"', TreeRecord("1:1:1:3", "1935620", 7.9441e-05)),
         ('1:1:1:4 7.36738e-05 "2460305"', TreeRecord("1:1:1:4", "2460305", 7.36738e-05))]
 
+
     def setUp(self):
         buff = "\n".join(map(lambda x: x[0], self.line_tests))
         self.stream = io.StringIO(buff)
@@ -70,7 +71,6 @@ class TestTreeFile(unittest.TestCase):
             output.append(record)
 
         self.assertEqual(output, [x[1] for x in self.line_tests], self.line_tests)
-
 
     def test_line_parse(self):
         parse = TreeFile("Nahh")

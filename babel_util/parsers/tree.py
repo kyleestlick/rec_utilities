@@ -87,6 +87,9 @@ class TreeFile(object):
         except AttributeError:
             print(line)
             raise
+        except IndexError:
+            print(line)
+            raise
 
 
 class TreeRecord(object):

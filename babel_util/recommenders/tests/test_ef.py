@@ -15,6 +15,13 @@ CLASSIC = [[18, 23, 24, 26, 27, 17, 12, 15, 16, 11, 14, 13, 10],
            [9, 8, 20, 21, 25, 6, 3, 7, 5, 4, 2, 22, 1, 19]]
 
 
+SINGLETONS = [
+    '1:276:1:1 0 "1" 1959666',
+    '1:277:1:1 0 "2" 3198129',
+    '1:278:1:1 0 "3" 9248225'
+]
+
+
 def make_answer(answers, current):
     r = None
     for a in answers:
@@ -36,6 +43,15 @@ class TestEFRec(unittest.TestCase):
         for recs in make_classic_recs(self.tr):
             recd = [r.pid for r in recs]
             self.assertListEqual(recd, make_answer(CLASSIC, recs[0].target_pid))
+
+    def test_singletons(self):
+        tr = TreeFile(SINGLETONS)
+        for recs in make_expert_rec(tr):
+            raise "This shouldn't ever happen"
+
+        tr = TreeFile(SINGLETONS)
+        for recs in make_classic_recs(tr):
+            raise "This shouldn't ever happen"
 
     def test_expert(self):
         for recs in make_expert_rec(self.tr):

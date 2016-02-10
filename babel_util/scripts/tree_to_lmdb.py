@@ -17,9 +17,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if platform.system() == 'Linux':
-        map_size = 500 * 1024 * 1024 * 1024 #  500GB
+        map_size = 500 * 1024 * 1024 * 1024  # 500GB
     else:
-        map_size = 10 * 1024 * 1024
+        map_size = 10 * 1024 * 1024  # 10MB on OSX. Sparse files don't work well on ancient FS.
 
     env = lmdb.Environment(args.db_prefix, map_async=True, writemap=True, max_dbs=2, map_size=map_size)
     classic = env.open_db(key=b'classic')
