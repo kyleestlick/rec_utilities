@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import logging
-import networkx as nx
 
 
 class TreeFile(object):
@@ -67,43 +66,6 @@ class TreeFile(object):
 
         return results
 
-    def to_graph(self):
-        """Converts a TreeFile to a networkx DiGraph. Consumes all of the stream.
-
-        This might consume all available memory if the input stream is large.
-
-        Returns:
-            A networkx DiGraph. It will likely contain things.
-        """
-        G = nx.DiGraph()
-
-        for cid, score, pid in self:
-            pid = "paper-" + str(pid)
-            edges = list()
-            clusters = cid.split(':')
-
-            clusters.pop() #Remove final cluster order
-
-            # This means we found an orphan
-            if len(clusters) == 0:
-                G.add_node(pid, {"score": score})
-                break
-
-            i = ":".join(clusters)
-            edges.append((i, pid))
-            clusters.pop()
-
-            while len(clusters):
-                j = ":".join(clusters)
-                edges.append((j, i))
-                i = j
-                clusters.pop()
-
-            G.add_edges_from(edges)
-            G.node[pid]['score'] = score
-
-        return G
-
     def __iter__(self):
         self._iter = iter(self.stream)
         return self
@@ -111,17 +73,72 @@ class TreeFile(object):
     def __next__(self):
         line = next(self._iter)
         while self.comment and line.startswith(self.comment):
-            line = self._iter.next()
+            line = next(self._iter)
         return self.parse_line(line)
 
     def parse_line(self, line):
         try:
-            cid, score, pid = line.split(self.delimiter)
-            pid = pid.strip().strip('"')
-            return cid, float(score), pid
+            v = line.split(self.delimiter)
+            v[2] = v[2].strip().strip('"')
+            return TreeRecord(v[0], v[2], v[1])
         except ValueError:
             print(line)
             raise
         except AttributeError:
             print(line)
             raise
+
+
+class TreeRecord(object):
+    __slots__ = ("pid", "local", "score", "parent")
+
+    def __init__(self, cluster, pid, score, delimiter=':'):
+        if not pid or pid == "":
+            raise ValueError("Invalid pid")
+
+        if score is None:
+            raise ValueError("Invalid score")
+
+        if cluster is None:
+            raise ValueError("Invalid cluster")
+
+        cluster = cluster.split(delimiter)
+
+        try:
+            cluster.pop()  # Remove local order
+            self.local = delimiter.join(cluster)
+            if not self.local:
+                raise ValueError("Invalid cluster")
+        except IndexError:
+            self.local = None
+        try:
+            cluster.pop()  # Remove local-cluster id
+            if len(cluster):
+                self.parent = delimiter.join(cluster)
+            else:
+                self.parent = None
+        except IndexError:
+            self.parent = None
+
+        score = float(score)
+        if score == 0:
+            score = -1.0  #Dynamo doesn't understand inf
+
+        # Strip whitespace and any quotes
+        self.pid = pid.strip().strip('"')
+        self.score = score
+
+    def __eq__(self, other):
+        if not isinstance(other, TreeRecord):
+            return False
+
+        return self.pid == other.pid and self.local == other.local and self.parent == other.parent
+
+    def __ne__(self, other):
+        return not self == other
+
+    def __str__(self):
+        return "<TreeRecord: %s %s %s>" % (self.local, self.pid, self.score)
+
+    def __repr__(self):
+        return "<TreeRecord: %s %s %s>" % (self.local, self.pid, self.score)
