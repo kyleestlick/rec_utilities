@@ -3,15 +3,16 @@ import lmdb
 from recommenders.ef import make_expert_rec, make_classic_recs
 from parsers.tree import TreeFile
 import msgpack
+from util.misc import Benchmark
 
 if __name__ == "__main__":
     import argparse
     import sys
     import platform
-    import time
     parser = argparse.ArgumentParser(description="Creates LMDB (.lmdb) from a tree file (.tree)")
     parser.add_argument('infile', nargs='?', type=argparse.FileType('r'), default=sys.stdin)
     parser.add_argument('db_prefix')
+    parser.add_argument('--benchmark-freq', default=10000, type=int)
     parser.add_argument('--toint', help="Convert scores to integers, larger is better", action='store_true', default=False)
     parser.add_argument('-l', '--limit', type=int, help="Max number of recommendations to generate per-paper", default=10)
     args = parser.parse_args()
@@ -25,15 +26,12 @@ if __name__ == "__main__":
     classic = env.open_db(key=b'classic')
     expert = env.open_db(key=b'expert')
     tf = TreeFile(args.infile)
-    count = 0
-    start = time.time()
+    b = Benchmark(args.benchmark_freq)
     with env.begin(db=expert, write=True) as txn:
         for recs in make_expert_rec(tf, args.limit):
             recd = [r.pid for r in recs]
             txn.put(recs[0].target_pid.encode(), msgpack.packb(recd))
-            count += 1
-            if count % 10000 == 0:
-                print("%s entry/s" % round(count/(time.time() - start), 2))
+            b.increment()
 
     args.infile.seek(0)
     tf = TreeFile(args.infile)
@@ -41,10 +39,7 @@ if __name__ == "__main__":
         for recs in make_classic_recs(tf, args.limit):
             recd = [r.pid for r in recs]
             txn.put(recs[0].target_pid.encode(), msgpack.packb(recd))
-            count += 1
-            if count % 10000 == 0:
-                print("%s entry/s" % round(count/(time.time() - start), 2))
+            b.increment()
 
     print(env.stat())
-    print("%s entry/s" % round(count/(time.time() - start), 2))
-    print("%s entries in %s seconds" % (count, round(time.time() - start, 2)))
+    b.print_freq()

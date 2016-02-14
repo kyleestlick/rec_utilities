@@ -57,3 +57,15 @@ class TestEFRec(unittest.TestCase):
         for recs in make_expert_rec(self.tr):
             recd = [r.pid for r in recs]
             self.assertListEqual(recd, make_answer(EXPERT, recs[0].target_pid))
+
+    def test_classic_limit(self):
+        for recs in make_classic_recs(self.tr, 5):
+            recd = [r.pid for r in recs]
+            answer = make_answer(CLASSIC, recs[0].target_pid)[:5]
+            self.assertListEqual(recd, answer)
+
+    def test_expert_limit(self):
+        for recs in make_expert_rec(self.tr, 5):
+            recd = [r.pid for r in recs]
+            answer = make_answer(EXPERT, recs[0].target_pid)[:5]
+            self.assertListEqual(recd, answer)
