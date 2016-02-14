@@ -27,7 +27,7 @@ class Benchmark(object):
         global_delta = new_window - self._start
         count_delta = self.count - self._last_count
         time_delta = new_window - self._last_time
-        print("[+{:.2f}s {}]\twindow: {:.2f} e/s\ttotal: {:.2f} e/s".format(global_delta,
+        print("[+{:.2f}s {:,}]\twindow: {:.2f} e/s\ttotal: {:.2f} e/s".format(global_delta,
                                                                            self.count,
                                                                            count_delta/time_delta,
                                                                            self.count/global_delta))
