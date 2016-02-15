@@ -132,6 +132,7 @@ class WOSStream(ContentHandler):
 
                 self.path.pop()
 
+                # TODO: These filters should really be elsewhere, wrapping the results of the parse call. Use Pipe?
                 if elem.tag == "REC":
                     if self.date_after and md:
                         if not md["date"] or md["date"] < self.date_after:

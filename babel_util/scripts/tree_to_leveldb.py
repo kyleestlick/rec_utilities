@@ -24,27 +24,30 @@ if __name__ == "__main__":
     tf = TreeFile(args.infile)
 
     if args.batch_size:
-        batch = leveldb.WriteBatch()
+        writer = leveldb.WriteBatch()
+    else:
+        writer = db
 
     for recs in make_expert_rec(tf, args.limit):
         recd = [r.pid for r in recs]
         key = recs[0].target_pid+"|expert"
-        db.Put(key.encode(), msgpack.packb(recd))
+        writer.Put(key.encode(), msgpack.packb(recd))
         b.increment()
         if args.batch_size and b.count % args.batch_size == 0:
-            db.Write(batch)
+            db.Write(writer)
 
     args.infile.seek(0)
     tf = TreeFile(args.infile)
     for recs in make_classic_recs(tf, args.limit):
         recd = [r.pid for r in recs]
         key = recs[0].target_pid+"|classic"
-        db.Put(key.encode(), msgpack.packb(recd))
+        writer.Put(key.encode(), msgpack.packb(recd))
         b.increment()
         if args.batch_size and b.count % args.batch_size == 0:
-            db.Write(batch)
+            db.Write(writer)
 
     if args.batch_size:
-        db.Write(batch, sync=True)
+        db.Write(writer, sync=True)
 
     b.print_freq()
+    print(db.GetStats())
