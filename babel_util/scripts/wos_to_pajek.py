@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from parsers.wos import WOSStream
 from util.PajekFactory import PajekFactory
-from util.misc import open_file
+from util.misc import open_file, Benchmark
 from multiprocessing import Process, JoinableQueue
 import datetime
 
@@ -23,24 +23,18 @@ def wos_parser(files, entries, wos_only, sample_rate, must_cite, batch_size, dat
     files.task_done()
 
 
-def pjk_writer(entries, output_file):
+def pjk_writer(entries, output_file, bench_freq):
     pjk = PajekFactory()
-    count = 0
-    start_time = datetime.datetime.now()
+    b = Benchmark()
     for entry_list in iter(entries.get, 'STOP'):
         for entry in entry_list:
             for citation in entry["citations"]:
                 pjk.add_edge(entry["id"], citation)
-            count += 1
-            if count % 10000 == 0:
-                deltaT = datetime.datetime.now() - start_time
-                print("{} entries processed: {:.2f} entries/s".format(count, 10**6*count/float(deltaT.microseconds)))
+            b.increment()
         entries.task_done()
 
-    deltaT = datetime.datetime.now() - start_time
-    print("{} entries processed: {:.2f} entries/s".format(count, 10**6*count/float(deltaT.microseconds)))
-    print(pjk)
-    with open_file(arguments.outfile, "w") as f:
+    b.print_freq()
+    with open_file(output_file, "w") as f:
         pjk.write(f)
     entries.task_done()
 
@@ -54,6 +48,7 @@ if __name__ == "__main__":
     parser.add_argument('-n', '--num-processes', help="Number of subprocesses to start", default=4, type=int)
     parser.add_argument('-b', '--batch-size', help="Number of entries to batch prior to transmission", default=100, type=int)
     parser.add_argument('-a', '--after', help="Only include nodes published on or after this year")
+    parser.add_argument('-bf', '--benchmark_freq', help="How often to emit benchmark info", type=int, default=1000000)
     parser.add_argument('infile', nargs='+')
     arguments = parser.parse_args()
 
@@ -79,7 +74,7 @@ if __name__ == "__main__":
                                          arguments.batch_size,
                                          date_after)).start()
 
-    Process(target=pjk_writer, args=(result_queue, arguments.outfile)).start()
+    Process(target=pjk_writer, args=(result_queue, arguments.outfile, arguments.benchmark_freq)).start()
 
     file_queue.join()
     result_queue.join()
