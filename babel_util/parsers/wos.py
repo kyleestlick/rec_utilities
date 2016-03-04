@@ -92,7 +92,7 @@ PARSERS = {"records/REC/UID": parse_id,
            SDS + "pub_info": parse_pubinfo,
            SDS + "names/name/wos_standard": parse_authors,
            SD + "fullrecord_metadata/references/reference/uid": parse_citations,
-           SD + "fullrecord_metadata/abstracts/abstract/abstract_text/p": parse_abstract,
+           #SD + "fullrecord_metadata/abstracts/abstract/abstract_text/p": parse_abstract,
            SD + "item/keywords_plus/keyword": parse_keywords}
 
 
