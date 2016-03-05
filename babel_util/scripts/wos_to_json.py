@@ -6,7 +6,7 @@ if __name__ == "__main__":
     import datetime
     import os
     from ujson import dump
-    from util.misc import Benchmark
+    from util.misc import Benchmark, open_file
     parser = argparse.ArgumentParser(description="Creates Pajek (.net) files from WOS XML")
     parser.add_argument('--outdir', help="Directory to write JSON files to")
     parser.add_argument('--wos-only', action="store_true", help="Only include nodes/edges in WOS")
@@ -24,7 +24,7 @@ if __name__ == "__main__":
     b = Benchmark()
 
     for file_name in arguments.infile:
-        with open(file_name, "r") as f:
+        with open_file(file_name, "r") as f:
             p = WOSStream(f, arguments.wos_only, arguments.sample_rate, arguments.must_cite, date_after)
             output_file = "%s.json" % os.path.basename(f.name).split(".", maxsplit=1)[0]
             if arguments.outdir:
