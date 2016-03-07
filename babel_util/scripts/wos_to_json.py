@@ -12,6 +12,7 @@ if __name__ == "__main__":
     parser.add_argument('--wos-only', action="store_true", help="Only include nodes/edges in WOS")
     parser.add_argument('--sample-rate', help="Edge sample rate", type=float, default=None)
     parser.add_argument('--must-cite', action="store_true", help="Only include nodes that cite other nodes")
+    parser.add_argument('-f', '--force', help="If outptut file already exists overwrite it.", action="store_true")
     parser.add_argument('-a', '--after', help="Only include nodes published on or after this year")
     parser.add_argument('-bf', '--benchmark_freq', help="How often to emit benchmark info", type=int, default=1000000)
     parser.add_argument('infile', nargs='+')
@@ -29,6 +30,9 @@ if __name__ == "__main__":
             output_file = "%s.json" % os.path.basename(f.name).split(".", maxsplit=1)[0]
             if arguments.outdir:
                 output_file = os.path.join(arguments.outdir, output_file)
+            if not arguments.force and os.path.isfile(output_file):
+                print("%s already exists, skipping..." % output_file)
+                break
             with open(output_file, "w") as g:
                 for entry in p.parse():
                     dump(entry, g)
