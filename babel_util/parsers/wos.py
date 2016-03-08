@@ -55,7 +55,8 @@ def parse_authors(x):
     e, md = x
     if "authors" not in md:
         md["authors"] = []
-    md["authors"].append(e.text)
+    if e.text:  # TODO: Temp fix for <wos_standard /> entities
+        md["authors"].append(e.text)
 
 
 def parse_citations(x):

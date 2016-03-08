@@ -4,6 +4,7 @@ import os
 import psutil
 from datetime import datetime
 import time
+from json import JSONEncoder
 
 def get_memory_usage():
     process = psutil.Process(os.getpid())
@@ -88,10 +89,18 @@ def open_file(filename, mode="r", encoding=None):
         f = open(filename, mode)
     return f
 
+
 def encode_datetime(obj):
     if isinstance(obj, datetime):
         return {'__datetime__': True, 'as_str': obj.isoformat()}
     return obj
+
+
+class DatetimeEncoder(JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            return {'__datetime__': True, 'as_str': obj.isoformat()}
+        return JSONEncoder.default(self, obj)
 
 #TODO: Implement, probably using dateparse since Python cant reade isoformat dates for some reason...
 #def decode_datetime(obj):

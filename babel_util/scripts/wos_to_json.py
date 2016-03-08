@@ -28,14 +28,17 @@ if __name__ == "__main__":
         with open_file(file_name, "r") as f:
             p = WOSStream(f, arguments.wos_only, arguments.sample_rate, arguments.must_cite, date_after)
             output_file = "%s.json" % os.path.basename(f.name).split(".", maxsplit=1)[0]
+
             if arguments.outdir:
                 output_file = os.path.join(arguments.outdir, output_file)
+
             if not arguments.force and os.path.isfile(output_file):
                 print("%s already exists, skipping..." % output_file)
                 break
-            with open(output_file, "w") as g:
+
+            with open(output_file, "w", encoding="utf-8") as g:
                 for entry in p.parse():
-                    dump(entry, g)
+                    dump(entry, g, ensure_ascii=False)
                     g.write("\n")
                     b.increment()
     b.print_freq()
