@@ -76,7 +76,7 @@ if __name__ == "__main__":
                                               result_queue,
                                               arguments.batch_size)).start()
 
-        Process(target=pjk_writer, args=(result_queue, arguments.outfile, arguments.benchmark_freq)).start()
+        Process(target=pjk_writer, args=(result_queue, arguments.outfile)).start()
 
         file_queue.join()
         result_queue.join()
