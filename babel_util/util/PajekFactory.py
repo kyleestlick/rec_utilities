@@ -7,21 +7,22 @@ from tempfile import TemporaryFile
 class PajekFactory(object):
     """Factory to build a Pajek file"""
 
-    def __init__(self, edge_stream=None, node_stream=None):
+    def __init__(self, edge_stream=None, node_stream=None, temp_dir=None):
         """Build a Pajek Writer.
 
         Args:
             edge_stream: If provided, a stream that edges will be written to. Otherwise a temporary file is used.
             node_stream: If provided, a stream that nodes will be written to. Otherwise a temporary file is used.
+            temp_dir: If provided, the directory to write temporary files to.
         """
         self.ids = AutoID(first_id=1)
         self.edge_stream = edge_stream
         self.node_stream = node_stream
 
         if not self.edge_stream:
-            self.edge_stream = TemporaryFile("w+")
+            self.edge_stream = TemporaryFile("w+", dir=temp_dir)
         if not self.node_stream:
-            self.node_stream = TemporaryFile("w+")
+            self.node_stream = TemporaryFile("w+", dir=temp_dir)
 
         self.edge_count = 0
 
