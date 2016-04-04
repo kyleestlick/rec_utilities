@@ -36,20 +36,10 @@ def parse_venue(context, rest):
 		logging.info("No venue found: " + rest)
 	context["venue"] = rest
 
-def parse_org(context, rest):
+def parse_publication(context, rest):
 	if len(rest) == 0:
 		logging.info("No org found: " + rest)
-	context["org"] = rest
-
-def parse_name(context, rest):
-	if len(rest) == 0:
-		logging.info("No name found: " + rest)
-	context["name"] = rest
-
-def parse_citing_count(context, rest):
-	if rest == 0 or rest == None:
-		logging.info("No citation count found: " + rest)
-	context["citing_count"] = rest
+	context["publication"] = rest
 
 def parse_key_phrases(context, rest):
 	if len(rest) == 0:
@@ -66,7 +56,6 @@ def parse_cited_by(context, rest):
 		logging.info("No cited by ID's found")
 	context["citedBy"] = rest
 
-#use ws.py from parsers 
 TOKEN_MAP = {
 	"INIT_CONTEXT" : lambda: {  "citations": [],
 								"citedBy": [],
@@ -79,19 +68,17 @@ TOKEN_MAP = {
 								"publication": None,
 								"date": None, 
 								"affiliations": None,
+								"venue": None
 							 },
 	"authors": parse_authors,
 	"year": parse_date,
 	"id": parse_id,
 	"title": parse_title,
 	"venue": parse_venue,
-	"paperAbstract": parse_abstract, #maybe use bodyText
+	"paperAbstract": parse_abstract, 
 	"keyPhrases": parse_key_phrases,
 	"citedBy": parse_cited_by,
-
-	"org": None, #no org in the dataset
-	"sourceInfo": None, #there is a doi URL in sourceInfo
-	"journal": None #can this be used for publication? it has a weird format though
+	"journal": parse_publication
 
 }
 
@@ -126,46 +113,13 @@ if __name__ == "__main__":
 	parser.add_argument('outfile', nargs='?', type=argparse.FileType('w'), default=sys.stdout)
 	args = parser.parse_args()
 
-	"""p = AiParser()
-	count = 0
-	for paper in p.parse(args.infile):
-		count = count + 1
-		print count
-		print pprint.pprint(paper)
-		args.outfile.write(ujson.dumps(paper))"""
 
 	p = AiParser()
 	for paper in p.parse(args.infile):
 		args.outfile.write(ujson.dumps(paper))
+		args.outfile.write('\n')
 
 
-
-"""
-'part-00799'
-bodyText
-clusterInfo
-classification
-citedByYearHistogram
-numCitedBy
-followOn
-year
-id
-citationContexts
-dataSetNames
-paperAbstract
-title
-citedBy
-keyPhrases
-journal
-numCiting
-indexInclusionReason
-authors
-citationVelocity
-numKeyReferences
-venue
-sourceInfo
-numKeyCitations
-"""
 
 
 
